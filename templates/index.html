@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Performance Predictor</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script>
+    // Apply saved theme before first paint to avoid flash.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("spp_theme"); } catch (e) {}
+      if (t === "dark" || t === "light") {
+        document.documentElement.setAttribute("data-theme", t);
+      }
+    })();
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="topbar" aria-label="Main navigation">
+      <div class="brand">
+        <span class="brand-icon">🎓</span>
+        <span class="brand-text">Student Performance Predictor</span>
+      </div>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle light/dark mode">☀️ Light</button>
+    </nav>
+    <div class="hero">
+      <h1>Know the outcome before the exam does</h1>
+      <p class="subtitle">Enter a student's academic and lifestyle details below. A machine-learning
+        model (a Decision Tree trained on 1,200 student records) predicts whether overall
+        performance is likely to be <strong>Poor, Average, Good or Excellent</strong> — along with
+        a confidence level for every prediction.</p>
+      <div class="hero-badges">
+        <span>🌳 Decision Tree</span>
+        <span>📊 10 features</span>
+        <span>🎯 4 performance classes</span>
+        <span>🔒 Runs locally</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= Prediction Form ================= -->
+    <section class="card reveal" id="input-section">
+      <h2>✏️ Student Details</h2>
+      <p class="section-hint">Adjust the sliders or type exact values. All 10 inputs are required.</p>
+
+      <div class="presets" id="presets" aria-label="Quick presets">
+        <button type="button" class="preset-btn" data-preset="excellent">🌟 Excellent Student</button>
+        <button type="button" class="preset-btn" data-preset="average">📚 Average Student</button>
+        <button type="button" class="preset-btn" data-preset="risk">⚠️ At-Risk Student</button>
+      </div>
+
+      <form id="predict-form" novalidate>
+        <div class="grid" id="input-grid">
+          <div class="field">
+            <label for="attendance"><span class="f-icon">🧑‍🏫</span> Attendance (%)</label>
+            <div class="slider-row">
+              <input type="range" id="attendance-range" data-for="attendance" min="0" max="100" step="0.1" value="0">
+              <input type="number" id="attendance" name="attendance" min="0" max="100" step="0.1" placeholder="88" required>
+            </div>
+            <span class="helper">Classes attended out of total classes</span>
+          </div>
+          <div class="field">
+            <label for="study_hours"><span class="f-icon">📖</span> Study Hours per Day</label>
+            <div class="slider-row">
+              <input type="range" id="study_hours-range" data-for="study_hours" min="0" max="12" step="0.1" value="0">
+              <input type="number" id="study_hours" name="study_hours" min="0" max="12" step="0.1" placeholder="4" required>
+            </div>
+            <span class="helper">Average self-study time daily</span>
+          </div>
+          <div class="field">
+            <label for="assignment_score"><span class="f-icon">📝</span> Assignment Score (%)</label>
+            <div class="slider-row">
+              <input type="range" id="assignment_score-range" data-for="assignment_score" min="0" max="100" step="0.1" value="0">
+              <input type="number" id="assignment_score" name="assignment_score" min="0" max="100" step="0.1" placeholder="75" required>
+            </div>
+            <span class="helper">Average grade on graded assignments</span>
+          </div>
+          <div class="field">
+            <label for="previous_exam_score"><span class="f-icon">🏆</span> Previous Exam Score (%)</label>
+            <div class="slider-row">
+              <input type="range" id="previous_exam_score-range" data-for="previous_exam_score" min="0" max="100" step="0.1" value="0">
+              <input type="number" id="previous_exam_score" name="previous_exam_score" min="0" max="100" step="0.1" placeholder="72" required>
+            </div>
+            <span class="helper">Last major exam result</span>
+          </div>
+          <div class="field">
+            <label for="internal_test_score"><span class="f-icon">🧪</span> Internal/Test Score (%)</label>
+            <div class="slider-row">
+              <input type="range" id="internal_test_score-range" data-for="internal_test_score" min="0" max="100" step="0.1" value="0">
+              <input type="number" id="internal_test_score" name="internal_test_score" min="0" max="100" step="0.1" placeholder="68" required>
+            </div>
+            <span class="helper">Recent internal / unit test score</span>
+          </div>
+          <div class="field">
+            <label for="sleep_hours"><span class="f-icon">😴</span> Sleep Hours</label>
+            <div class="slider-row">
+              <input type="range" id="sleep_hours-range" data-for="sleep_hours" min="0" max="12" step="0.1" value="0">
+              <input type="number" id="sleep_hours" name="sleep_hours" min="0" max="12" step="0.1" placeholder="7" required>
+            </div>
+            <span class="helper">Typical sleep per night (6.5–8.5 is healthy)</span>
+          </div>
+          <div class="field">
+            <label for="screen_time"><span class="f-icon">📱</span> Daily Screen Time (hours)</label>
+            <div class="slider-row">
+              <input type="range" id="screen_time-range" data-for="screen_time" min="0" max="16" step="0.1" value="0">
+              <input type="number" id="screen_time" name="screen_time" min="0" max="16" step="0.1" placeholder="5" required>
+            </div>
+            <span class="helper">Non-academic screen time per day</span>
+          </div>
+          <div class="field">
+            <label for="assignments_completed"><span class="f-icon">✅</span> Assignments Completed (%)</label>
+            <div class="slider-row">
+              <input type="range" id="assignments_completed-range" data-for="assignments_completed" min="0" max="100" step="0.1" value="0">
+              <input type="number" id="assignments_completed" name="assignments_completed" min="0" max="100" step="0.1" placeholder="90" required>
+            </div>
+            <span class="helper">Share of assigned work submitted</span>
+          </div>
+          <div class="field">
+            <label for="class_participation"><span class="f-icon">🙋</span> Class Participation (%)</label>
+            <div class="slider-row">
+              <input type="range" id="class_participation-range" data-for="class_participation" min="0" max="100" step="0.1" value="0">
+              <input type="number" id="class_participation" name="class_participation" min="0" max="100" step="0.1" placeholder="60" required>
+            </div>
+            <span class="helper">Engagement in class activities</span>
+          </div>
+          <div class="field">
+            <label for="previous_backlogs"><span class="f-icon">🚩</span> Previous Backlogs</label>
+            <div class="slider-row">
+              <input type="range" id="previous_backlogs-range" data-for="previous_backlogs" min="0" max="8" step="1" value="0">
+              <input type="number" id="previous_backlogs" name="previous_backlogs"
+                     min="0" max="8" step="1" placeholder="e.g. 1" required>
+            </div>
+            <span class="helper">Subjects failed previously (0–8)</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" id="predict-btn" class="btn primary">🔮 Predict Performance</button>
+          <button type="button" id="reset-btn" class="btn">↺ Reset</button>
+        </div>
+        <p id="form-error" class="error-msg" role="alert" hidden></p>
+      </form>
+    </section>
+
+
+    <!-- ================= Result ================= -->
+    <section class="card reveal" id="result-card" hidden>
+      <h2>🎯 Prediction Result</h2>
+      <div class="result-row">
+        <div>
+          <span class="result-label">Predicted Performance:</span>
+          <span id="result-prediction" class="prediction-badge">–</span>
+        </div>
+        <div>
+          <span class="result-label">Confidence:</span>
+          <span id="result-confidence" class="confidence-value"></span>
+        </div>
+      </div>
+      <div class="confidence-bar-wrap" aria-hidden="true">
+        <div id="confidence-bar" class="confidence-bar"></div>
+      </div>
+      <p id="result-explanation" class="explanation"></p>
+      <h3>Input Summary</h3>
+      <ul id="input-summary" class="summary-list"></ul>
+    </section>
+
+    <!-- ================= Model Performance ================= -->
+    <section class="card reveal">
+      <h2>📈 About the Model</h2>
+      <p class="section-hint">A scikit-learn DecisionTreeClassifier is trained on the collected
+        student records, then evaluated on a held-out 20% test split it has never seen.
+        The numbers below are computed by the training script on that test set — they are
+        never hardcoded and update whenever the model is retrained.</p>
+      <div class="metric-grid" id="metrics-grid">
+        <div class="metric">
+          <span class="metric-icon">✅</span>
+          <span class="metric-name">Accuracy</span>
+          <span class="metric-value" id="m-accuracy">–</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">🎯</span>
+          <span class="metric-name">Precision</span>
+          <span class="metric-value" id="m-precision">–</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">🔍</span>
+          <span class="metric-name">Recall</span>
+          <span class="metric-value" id="m-recall">–</span>
+        </div>
+        <div class="metric">
+          <span class="metric-icon">⚖️</span>
+          <span class="metric-name">F1 Score</span>
+          <span class="metric-value" id="m-f1">–</span>
+        </div>
+      </div>
+      <p id="metrics-extra" class="muted small" style="margin-top:12px"></p>
+    </section>
+
+    <!-- ================= Dataset Info ================= -->
+    <section class="card reveal">
+      <h2>🗂️ Dataset Information</h2>
+      <p class="section-hint">The model learns from a generated-but-realistic dataset of student
+        records stored in <code>data/student_performance.csv</code>. Statistics below come
+        directly from the server after training.</p>
+      <div class="dataset-grid" id="dataset-stats"></div>
+      <h3>Class distribution (after cleaning)</h3>
+      <div class="dist-block" id="dataset-dist">
+        <p class="muted">Loading dataset info…</p>
+      </div>
+    </section>
+
+    <!-- ================= How It Works ================= -->
+    <section class="card reveal">
+      <h2>⚙️ How It Works</h2>
+      <ol class="howto">
+        <li>You set the 10 academic and lifestyle details of a student (sliders or exact values).</li>
+        <li>JavaScript validates the values and sends them to the Flask API
+            (<code>POST /api/predict</code>).</li>
+        <li>Flask re-validates everything and feeds the feature vector to the trained
+            Decision Tree.</li>
+        <li>The tree walks its learned decision rules and returns the predicted class —
+            Poor, Average, Good or Excellent — plus the probability of every class.</li>
+        <li>The page shows the prediction, animates a confidence bar from 0% to the model's
+            confidence, explains the key driving factors, and saves the result to your
+            browser's local history.</li>
+      </ol>
+    </section>
+
+    <!-- ================= History ================= -->
+    <section class="card reveal">
+      <h2>🕘 Prediction History</h2>
+      <p class="section-hint">Stored locally in your browser (localStorage). Most recent first —
+        restore any previous prediction back into the form.</p>
+      <div id="history-container">
+        <p class="muted" id="history-empty">No predictions yet.</p>
+        <div id="history-list" class="history-grid" hidden></div>
+      </div>
+      <div class="actions" style="margin-top:14px">
+        <button type="button" id="clear-history-btn" class="btn small">🗑️ Clear History</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Student Performance Predictor — Flask + scikit-learn Decision Tree · Phase 2 UI</p>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
+
