@@ -141,8 +141,10 @@ def predict():
         classes = list(MODEL.classes_)
         idx = int(proba.argmax())
         prediction = classes[idx]
-        confidence = round(float(proba[idx]) * 100, 1)
-        probabilities = {c: round(float(p) * 100, 1) for c, p in zip(classes, proba)}
+        # Model probability (0-1) -> percent, converted exactly once, clamped to 0-100.
+        confidence = round(max(0.0, min(100.0, float(proba[idx]) * 100)), 1)
+        probabilities = {c: round(max(0.0, min(100.0, float(p) * 100)), 1)
+                         for c, p in zip(classes, proba)}
 
         return jsonify({
             "prediction": prediction,

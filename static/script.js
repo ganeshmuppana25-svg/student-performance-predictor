@@ -158,7 +158,10 @@ function renderResult(data, values) {
   card.classList.add("show", `pred-${cls}`);
 
   $("result-prediction").textContent = data.prediction;
-  $("result-confidence").textContent = `${data.confidence}%`;
+  // Normalize once: clamp to 0-100 and use this single value for BOTH the
+  // displayed text and the bar width, so they can never disagree.
+  const conf = Math.max(0, Math.min(100, Number(data.confidence)));
+  $("result-confidence").textContent = `${conf}%`;
   $("result-explanation").textContent = data.explanation;
 
   const summary = $("input-summary");
@@ -169,12 +172,14 @@ function renderResult(data, values) {
     summary.appendChild(li);
   }
 
-  // Animate the confidence bar from 0% to the real value.
+  // Animate the confidence bar 0% -> conf, restarting reliably on every
+  // prediction (even repeated identical ones) via transition reset + reflow.
   const bar = $("confidence-bar");
+  bar.style.transition = "none";
   bar.style.width = "0%";
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => { bar.style.width = `${data.confidence}%`; });
-  });
+  void bar.offsetWidth; // force reflow so the 0% state is committed
+  bar.style.transition = "";
+  bar.style.width = `${conf}%`;
 
   card.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
