@@ -1,6 +1,6 @@
 {
   "model": "DecisionTreeClassifier",
-  "trained_at": "2026-09-05T17:13:19.547641",
+  "trained_at": "2026-09-06T17:11:00.151185",
   "random_state": 42,
   "training_rows": 960,
   "test_rows": 240,
